@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
-
+import bcrypt from 'bcrypt';
+import { generateToken } from './../lib/utils.js';
 const userSchema = new Schema({
   name: {
     type: String,
@@ -21,6 +22,15 @@ const userSchema = new Schema({
     required: [true, 'Please provide password'],
   },
 });
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+});
+
+userSchema.methods.createJWT = function () {
+  return generateToken(this._id);
+};
 
 const User = model('User', userSchema);
 export default User;
