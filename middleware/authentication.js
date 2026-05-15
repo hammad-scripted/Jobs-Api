@@ -13,14 +13,13 @@ export const protectedRoute = (req, res, next) => {
 
     const decodedToken = isTokenValid(token);
     if (!decodedToken) {
-      throw new UnauthenticatedError('Authentication Invalid');
+      throw new UnauthenticatedError('Token Invalid');
     }
     // alternative code
     // const user= await User.findById(decodedToken.userId).select('-password');
     // req.user=user;
     req.user = {
       userId: decodedToken.userId,
-      name: decodedToken.name,
     };
 
     next();

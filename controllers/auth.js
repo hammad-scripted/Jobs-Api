@@ -50,5 +50,7 @@ export const login = async (req, res) => {
     return res
       .status(StatusCodes.OK)
       .json({ user: { name: user.name }, token });
-  } catch (error) {}
+  } catch (error) {
+    throw new BadRequestError(error.message);
+  }
 };
