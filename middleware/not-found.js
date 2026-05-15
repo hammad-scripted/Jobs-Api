@@ -1,3 +1,2 @@
-const notFound = (req, res) => res.status(404).send('Route does not exist');
-
-export default notFound;
+export const notFoundMiddleware = (req, res) =>
+  res.status(404).send('Route does not exist');
