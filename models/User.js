@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
 import bcrypt from 'bcrypt';
 import { generateToken } from './../lib/utils.js';
+
 const userSchema = new Schema({
   name: {
     type: String,
@@ -30,6 +31,9 @@ userSchema.pre('save', async function () {
 
 userSchema.methods.createJWT = function () {
   return generateToken(this._id);
+};
+userSchema.methods.isPasswordCorrect = async function (password) {
+  return await bcrypt.compare(password, this.password);
 };
 
 const User = model('User', userSchema);

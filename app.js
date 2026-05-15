@@ -13,13 +13,14 @@ import jobRouter from './routes/jobs.js';
 import { notFoundMiddleware } from './middleware/not-found.js';
 import { errorHandlerMiddleware } from './middleware/error-handler.js';
 import { connectDB } from './db/connect.js';
+import { protectedRoute } from './middleware/authentication.js';
 
 const app = express();
 
 app.use(express.json());
 
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/jobs', jobRouter);
+app.use('/api/v1/jobs', protectedRoute, jobRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);
