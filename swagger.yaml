@@ -1,0 +1,87 @@
+openapi: 3.0.3
+info:
+  title: Jobs-Api
+  version: 1.0.0
+  contact: {}
+servers:
+  - url: '{{BASE_URL}}'
+paths:
+  /api/v1/auth/register:
+    post:
+      summary: Register
+      description: Register
+      operationId: register
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  example: hammad@gmail.com
+                name:
+                  type: string
+                  example: Hammad
+                password:
+                  type: string
+                  example: '123456'
+            examples:
+              Register:
+                value:
+                  email: hammad@gmail.com
+                  name: Hammad
+                  password: '123456'
+      responses:
+        '200':
+          description: ''
+  /api/v1/auth/login:
+    post:
+      summary: Login
+      description: Login
+      operationId: login
+      responses:
+        '200':
+          description: ''
+      security:
+        - bearerAuth: []
+  /api/v1/jobs/:
+    get:
+      summary: Get All Jobs
+      description: Get All Jobs
+      operationId: getAllJobs
+      responses:
+        '200':
+          description: ''
+      security:
+        - bearerAuth: []
+    post:
+      summary: Post Job
+      description: Post Job
+      operationId: postJob
+      responses:
+        '200':
+          description: ''
+      security:
+        - bearerAuth: []
+  /:
+    get:
+      summary: Get Job
+      description: Get Job
+      operationId: getJob
+      responses:
+        '200':
+          description: ''
+    put:
+      summary: Update Job
+      description: Update Job
+      operationId: updateJob
+      responses:
+        '200':
+          description: ''
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags: []

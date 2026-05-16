@@ -12,6 +12,8 @@ import cors from 'cors';
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
+import swaggerUI from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 import authRouter from './routes/auth.js';
 import jobRouter from './routes/jobs.js';
@@ -23,6 +25,9 @@ import { notFoundMiddleware } from './middleware/not-found.js';
 import { errorHandlerMiddleware } from './middleware/error-handler.js';
 
 const app = express();
+
+// SWAGGER DOCS
+const swaggerDocument = YAML.load('./swagger.yaml');
 
 // RATE LIMITER
 const limiter = rateLimit({
@@ -43,16 +48,20 @@ app.use(mongoSanitize());
 
 app.use(limiter);
 
-app.use(morgan('tiny'));
+app.use(morgan('dev'));
 
-// ROUTES
+// SWAGGER ROUTE
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocument));
 
+// HOME ROUTE
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     msg: 'Jobs API built with Express and MongoDB is up and running...',
   });
 });
+
+// ROUTES
 app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/jobs', protectedRoute, jobRouter);
