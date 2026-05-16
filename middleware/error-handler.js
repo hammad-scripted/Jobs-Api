@@ -14,6 +14,17 @@ export const errorHandlerMiddleware = (err, req, res, next) => {
     });
   }
 
+  // ? JWT ERRORS
+  if (err.name === 'JsonWebTokenError') {
+    customError.statusCode = StatusCodes.UNAUTHORIZED;
+    customError.msg = 'Invalid Token';
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    customError.statusCode = StatusCodes.UNAUTHORIZED;
+    customError.msg = 'Token Expired';
+  }
+
   // ? MONGOOSE VALIDATION ERROR
   if (err.name === 'ValidationError') {
     customError.statusCode = StatusCodes.BAD_REQUEST;
