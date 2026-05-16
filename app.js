@@ -46,6 +46,13 @@ app.use(limiter);
 app.use(morgan('tiny'));
 
 // ROUTES
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    msg: 'Jobs API built with Express and MongoDB is up and running...',
+  });
+});
 app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1/jobs', protectedRoute, jobRouter);
