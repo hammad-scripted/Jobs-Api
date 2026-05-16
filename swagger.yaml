@@ -1,87 +1,486 @@
 openapi: 3.0.3
 info:
-  title: Jobs-Api
+  title: Jobs API
+  description: A RESTful API for managing job applications built with Express and MongoDB
   version: 1.0.0
-  contact: {}
+  contact:
+    name: Jobs API Support
 servers:
+  - url: 'http://localhost:3000'
+    description: Development Server
   - url: '{{BASE_URL}}'
+    description: Production Server
+
 paths:
+  /:
+    get:
+      summary: API Health Check
+      description: Verify the API is up and running
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  msg:
+                    type: string
+                    example: 'Jobs API built with Express and MongoDB is up and running...'
+
   /api/v1/auth/register:
     post:
-      summary: Register
-      description: Register
+      summary: Register a new user
+      description: Create a new user account with email, name, and password. Returns JWT token upon successful registration.
       operationId: register
+      tags:
+        - Authentication
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                email:
-                  type: string
-                  example: hammad@gmail.com
-                name:
-                  type: string
-                  example: Hammad
-                password:
-                  type: string
-                  example: '123456'
+              $ref: '#/components/schemas/RegisterRequest'
             examples:
               Register:
                 value:
-                  email: hammad@gmail.com
-                  name: Hammad
-                  password: '123456'
+                  email: user@example.com
+                  name: John Doe
+                  password: 'securePassword123'
       responses:
-        '200':
-          description: ''
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad Request - Missing fields or email already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                MissingFields:
+                  value:
+                    msg: 'Please provide all values'
+                EmailExists:
+                  value:
+                    msg: 'Email already exists'
+
   /api/v1/auth/login:
     post:
-      summary: Login
-      description: Login
+      summary: Login user
+      description: Authenticate user with email and password. Returns JWT token upon successful login.
       operationId: login
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              Login:
+                value:
+                  email: user@example.com
+                  password: 'securePassword123'
       responses:
         '200':
-          description: ''
-      security:
-        - bearerAuth: []
-  /api/v1/jobs/:
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad Request - Missing email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                msg: 'Invalid Credentials'
+
+  /api/v1/jobs:
     get:
-      summary: Get All Jobs
-      description: Get All Jobs
+      summary: Get all jobs
+      description: Retrieve all job postings created by the authenticated user. Requires valid JWT token.
       operationId: getAllJobs
-      responses:
-        '200':
-          description: ''
+      tags:
+        - Jobs
       security:
         - bearerAuth: []
+      responses:
+        '200':
+          description: Jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Job'
+                  count:
+                    type: integer
+                    example: 5
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
     post:
-      summary: Post Job
-      description: Post Job
-      operationId: postJob
-      responses:
-        '200':
-          description: ''
+      summary: Create a new job posting
+      description: Create a new job posting. Requires valid JWT token. The job will be associated with the authenticated user.
+      operationId: createJob
+      tags:
+        - Jobs
       security:
         - bearerAuth: []
-  /:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJobRequest'
+            examples:
+              CreateJob:
+                value:
+                  company: 'Tech Company Inc.'
+                  position: 'Senior Software Engineer'
+                  status: 'pending'
+      responses:
+        '201':
+          description: Job posting created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+        '400':
+          description: Bad Request - Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                msg: 'Please provide all values'
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/jobs/{id}:
     get:
-      summary: Get Job
-      description: Get Job
+      summary: Get a specific job
+      description: Retrieve a single job posting by ID. Only the job creator can view their own jobs. Requires valid JWT token.
       operationId: getJob
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The job ID (MongoDB ObjectId)
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
       responses:
         '200':
-          description: ''
+          description: Job retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - Job ID does not exist or doesn't belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                msg: 'No job with id 507f1f77bcf86cd799439011'
+
     put:
-      summary: Update Job
-      description: Update Job
+      summary: Update a job posting
+      description: Update an existing job posting. Only the job creator can update their own jobs. Requires valid JWT token.
       operationId: updateJob
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The job ID (MongoDB ObjectId)
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateJobRequest'
+            examples:
+              UpdateJob:
+                value:
+                  company: 'Updated Tech Company'
+                  position: 'Lead Software Engineer'
+                  status: 'interview'
       responses:
         '200':
-          description: ''
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job:
+                    $ref: '#/components/schemas/Job'
+        '400':
+          description: Bad Request - Missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - Job ID does not exist or doesn't belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      summary: Delete a job posting
+      description: Delete a job posting permanently. Only the job creator can delete their own jobs. Requires valid JWT token.
+      operationId: deleteJob
+      tags:
+        - Jobs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The job ID (MongoDB ObjectId)
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Job deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: 'Job deleted successfully'
+        '401':
+          description: Unauthorized - Invalid or missing JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not Found - Job ID does not exist or doesn't belong to user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
-tags: []
+      bearerFormat: JWT
+      description: 'JWT token required. Include as: Authorization: Bearer <token>'
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - name
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address (must be unique)
+          example: user@example.com
+        name:
+          type: string
+          minLength: 3
+          maxLength: 50
+          description: User's full name
+          example: John Doe
+        password:
+          type: string
+          minLength: 6
+          description: User's password (minimum 6 characters)
+          example: 'securePassword123'
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: user@example.com
+        password:
+          type: string
+          description: User's password
+          example: 'securePassword123'
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            name:
+              type: string
+              example: John Doe
+        token:
+          type: string
+          description: JWT token for authentication
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+
+    CreateJobRequest:
+      type: object
+      required:
+        - company
+        - position
+      properties:
+        company:
+          type: string
+          maxLength: 50
+          description: Company name
+          example: 'Tech Company Inc.'
+        position:
+          type: string
+          maxLength: 100
+          description: Job position/title
+          example: 'Senior Software Engineer'
+        status:
+          type: string
+          enum: [interview, declined, pending]
+          default: pending
+          description: Current status of the job application
+          example: pending
+
+    UpdateJobRequest:
+      type: object
+      required:
+        - company
+        - position
+      properties:
+        company:
+          type: string
+          maxLength: 50
+          description: Company name
+          example: 'Updated Tech Company'
+        position:
+          type: string
+          maxLength: 100
+          description: Job position/title
+          example: 'Lead Software Engineer'
+        status:
+          type: string
+          enum: [interview, declined, pending]
+          description: Current status of the job application
+          example: interview
+
+    Job:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique job ID (MongoDB ObjectId)
+          example: '507f1f77bcf86cd799439011'
+        company:
+          type: string
+          description: Company name
+          example: 'Tech Company Inc.'
+        position:
+          type: string
+          description: Job position/title
+          example: 'Senior Software Engineer'
+        status:
+          type: string
+          enum: [interview, declined, pending]
+          description: Current status of the job application
+          example: pending
+        createdBy:
+          type: string
+          description: ID of the user who created this job posting
+          example: '507f1f77bcf86cd799439012'
+        createdAt:
+          type: string
+          format: date-time
+          description: Job creation timestamp
+          example: '2024-01-15T10:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last job update timestamp
+          example: '2024-01-15T15:45:00Z'
+
+    ErrorResponse:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Error message
+          example: 'Invalid credentials'
+
+tags:
+  - name: Health
+    description: API health check endpoint
+  - name: Authentication
+    description: User registration and login endpoints
+  - name: Jobs
+    description: Job management endpoints (CRUD operations)
